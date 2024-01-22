@@ -1,0 +1,41 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_COMPOSE_VERSION: "1.29.2"
+  DOCKER_HOST: tcp://docker:2375
+
+before_script:
+  - apk add --no-cache py-pip
+  - pip install docker-compose==${DOCKER_COMPOSE_VERSION}
+  - apk update && apk add openssh-client
+  # - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+
+build:
+  stage: build
+  script:
+    - docker build -t web .
+
+test:
+  stage: test
+  script:
+    - docker-compose run web npm test
+
+deploy:
+  stage: deploy
+  script:
+    - ssh root@$SERVER_IP "docker-compose down"
+    - ssh root@$SERVER_IP "docker pull myapp"
+    - ssh root@$SERVER_IP "docker-compose up -d"
+  environment:
+    name: production
+  only:
+    - master

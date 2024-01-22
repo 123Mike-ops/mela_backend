@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  web:
+    build: .
+    command: sh -c "npm run migrate up && npm start"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:pass1234@db:5432/postgres 
+  # migration:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.migration
+  #   # environment:
+  #   #   - NODE_ENV=production
+  #   depends_on:
+  #     - db
+  #   volumes:
+  #     - ./backend_web/migrations:/backend_web/migrations
+  #   command: npm run migrate up
+    
+volumes:
+  db_data:
